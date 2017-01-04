@@ -25,9 +25,9 @@ composited.on(":update-by", reducerName => console.log("update fired by", reduce
 r1.update(s => Promise.resolve({a: s.a + 1}));
 r2.update(s => Promise.resolve({b: s.b + 1}));
 
-async started by r1
-combined result { a: 2, b: 2 }
-update fired by r1
-combined result { a: 2, b: 3 }
-update fired by r2
-async ended by r2
+// async started by r1
+// combined result { a: 2, b: 2 }
+// update fired by r1
+// combined result { a: 2, b: 3 }
+// update fired by r2
+// async ended by r2
