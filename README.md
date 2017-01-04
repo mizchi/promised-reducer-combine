@@ -14,8 +14,9 @@ See https://github.com/mizchi/promised-reducer
 ## How to use
 
 ```js
-const PromisedReducer = require("promised-reducer").default;
-const combine = require("promised-reducer-combine").default;
+import PromisedReducer from "promised-reducer";
+import combine = from "promised-reducer-combine";
+
 const r1 = new PromisedReducer({a: 1});
 const r2 = new PromisedReducer({b: 2});
 
