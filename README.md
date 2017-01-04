@@ -2,20 +2,29 @@
 
 Combine some promised-reducer's.
 
+```
+npm install promised-reducer --save
+npm install promised-reducer-combine --save
+```
+
+
+
 See https://github.com/mizchi/promised-reducer
 
 ## How to use
 
 ```js
+const PromisedReducer = require("promised-reducer").default;
+const combine = require("promised-reducer-combine").default;
 const r1 = new PromisedReducer({a: 1});
 const r2 = new PromisedReducer({b: 2});
 
 // async
-const composited = combine({r1, r2}, ({r1, r2}) => ({r1, r2}));
-composited.on(":start-async-updating-by", name => console.log("async started by", name));
-composited.on(":end-async-updating-by", name => console.log("async ended by", name));
-composited.on(":update", combined => console.log("combined result", combined));
-composited.on(":update-by", reducerName => console.log("update fired by", reducerName));
+const combined = combine({r1, r2}, ({r1, r2}) => ({r1, r2}));
+combined.on(":start-async-updating-by", name => console.log("async started by", name));
+combined.on(":end-async-updating-by", name => console.log("async ended by", name));
+combined.on(":update", data => console.log("combined result", data));
+combined.on(":update-by", reducerName => console.log("update fired by", reducerName));
 
 r1.update(s => Promise.resolve({a: s.a + 1}));
 r2.update(s => Promise.resolve({b: s.b + 1}));
