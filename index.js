@@ -1,96 +1,150 @@
 'use strict';
-const PromisedReducer = require("promised-reducer").default;
 
-export default function combine(reducersMap, combineFunc) {
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var PromisedReducer = require("promised-reducer").default;
+module.exports = combine;
+
+function combine(reducersMap, combineFunc) {
   return new CombinedReducer(reducersMap, combineFunc);
 }
 
 // polyfill
 function includes(arr, item) {
-  return arr.filter(i => i === item).length > 0;
+  return arr.filter(function (i) {
+    return i === item;
+  }).length > 0;
 }
 
 function _getCurrentState(reducersMap, combineFunc) {
-  const keyToState = {};
-  for (const key in reducersMap) {
-    const reducer = reducersMap[key];
+  var keyToState = {};
+  for (var key in reducersMap) {
+    var reducer = reducersMap[key];
     keyToState[key] = reducer.state;
   }
   return combineFunc(keyToState);
 }
 
-class CombinedReducer extends PromisedReducer {
-  constructor(reducersMap, combineFunc) {
-    const initial = _getCurrentState(reducersMap, combineFunc);
+var CombinedReducer = function (_PromisedReducer) {
+  _inherits(CombinedReducer, _PromisedReducer);
 
-    super(initial);
-    this._onDestroy = [];
-    this._onProgressReducers = [];
+  function CombinedReducer(reducersMap, combineFunc) {
+    _classCallCheck(this, CombinedReducer);
 
-    for (const key in reducersMap) {
-      const reducer = reducersMap[key];
+    var initial = _getCurrentState(reducersMap, combineFunc);
+
+    var _this = _possibleConstructorReturn(this, (CombinedReducer.__proto__ || Object.getPrototypeOf(CombinedReducer)).call(this, initial));
+
+    _this._onDestroy = [];
+    _this._onProgressReducers = [];
+
+    var _loop = function _loop(key) {
+      var reducer = reducersMap[key];
 
       // on update
-      const onUpdate = obj => {
-        this.update(_old => _getCurrentState(reducersMap, combineFunc));
-        this.emit(":update-by", key);
+      var onUpdate = function onUpdate(obj) {
+        _this.update(function (_old) {
+          return _getCurrentState(reducersMap, combineFunc);
+        });
+        _this.emit(":update-by", key);
       };
       reducer.on(":update", onUpdate);
-      this._onDestroy.push(() => reducer.off(":update", onUpdate));
+      _this._onDestroy.push(function () {
+        return reducer.off(":update", onUpdate);
+      });
 
       // on start-async-updating
-      const onStartAsyncUpdating = obj => {
-        const beforeOnProgressReducerCount = this._onProgressReducers.length;
+      var onStartAsyncUpdating = function onStartAsyncUpdating(obj) {
+        var beforeOnProgressReducerCount = _this._onProgressReducers.length;
 
-        if (!includes(this._onProgressReducers, reducer)) {
-          this._onProgressReducers.push(reducer);
+        if (!includes(_this._onProgressReducers, reducer)) {
+          _this._onProgressReducers.push(reducer);
         }
 
-        if (
-          beforeOnProgressReducerCount === 0 &&
-          this._onProgressReducers.length > 0
-        ) {
-          this.emit(":start-async-updating-by", key);
+        if (beforeOnProgressReducerCount === 0 && _this._onProgressReducers.length > 0) {
+          _this.emit(":start-async-updating-by", key);
         }
       };
       reducer.on(":start-async-updating", onStartAsyncUpdating);
-      this._onDestroy.push(() => reducer.off(":start-async-updating", onStartAsyncUpdating));
+      _this._onDestroy.push(function () {
+        return reducer.off(":start-async-updating", onStartAsyncUpdating);
+      });
 
       // on end-async-updating WIP
-      const onEndAsyncUpdating = () => {
-        console.log("onEndAsyncUpdating", key);
-        const beforeOnProgressReducerCount = this._onProgressReducers.length;
+      var onEndAsyncUpdating = function onEndAsyncUpdating() {
+        var beforeOnProgressReducerCount = _this._onProgressReducers.length;
 
-        if (includes(onProgressReducers, reducer)) {
-          this._onProgressReducers = this._onProgressReducers.filter(i => i !== reducer);
+        if (includes(_this._onProgressReducers, reducer)) {
+          _this._onProgressReducers = _this._onProgressReducers.filter(function (i) {
+            return i !== reducer;
+          });
         }
 
-        if (
-          beforeOnProgressReducerCount > 0 &&
-          this._onProgressReducers.length === 0
-        ) {
-          this.emit(":end-async-updating-by", key);
+        if (beforeOnProgressReducerCount > 0 && _this._onProgressReducers.length === 0) {
+          _this.emit(":end-async-updating-by", key);
         }
       };
       reducer.on(":end-async-updating", onEndAsyncUpdating);
-      this._onDestroy.push(() => reducer.off(":end-async-updating", onEndAsyncUpdating));
+      _this._onDestroy.push(function () {
+        return reducer.off(":end-async-updating", onEndAsyncUpdating);
+      });
+    };
+
+    for (var key in reducersMap) {
+      _loop(key);
     }
 
+    return _this;
   }
 
-  getReducerByName(name) {
-    return this._reducersMap[name];
-  }
-
-  isProgressinsgAsync() {
-    return this._onProgressReducers.length > 0
-  }
-
-  destroy() {
-    for (const f of this._onDestroy) {
-      f();
+  _createClass(CombinedReducer, [{
+    key: "getReducerByName",
+    value: function getReducerByName(name) {
+      return this._reducersMap[name];
     }
-    this.removeAllListeners();
-    this._onProgressReducers = [];
-  }
-}
+  }, {
+    key: "isProgressinsgAsync",
+    value: function isProgressinsgAsync() {
+      return this._onProgressReducers.length > 0;
+    }
+  }, {
+    key: "destroy",
+    value: function destroy() {
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = this._onDestroy[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var f = _step.value;
+
+          f();
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+
+      this.removeAllListeners();
+      this._onProgressReducers = [];
+    }
+  }]);
+
+  return CombinedReducer;
+}(PromisedReducer);
